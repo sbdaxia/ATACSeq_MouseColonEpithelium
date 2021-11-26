@@ -1,0 +1,288 @@
+---
+title: "Dynamic ATAC-peaks in KRasG12D colonic epithelium using merged peaks with Csnk2a1 subset"
+author: "Bing Shui"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: yes
+    toc_float: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Library loading and set up
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(DESeq2)
+library(knitr)
+library(kableExtra)
+library(plyranges)
+library(stringr)
+library(biobroom)
+library(ggrepel)
+library(RColorBrewer)
+library(gplots)
+library(biomaRt)
+library(ChIPseeker)
+library(TxDb.Mmusculus.UCSC.mm10.knownGene)
+library(mixOmics)
+library(mosaic)
+library(clusterProfiler)
+library(DOSE)
+library(org.Mm.eg.db)
+library(pathview)
+library(AnnotationDbi)
+library(fgsea)
+library(rvest)
+library(ggseqlogo)
+library(gridExtra)
+library(rtracklayer)
+library(Biostrings)
+library(Rsamtools)
+library(data.table)
+library(grid)
+library(apeglm)
+```
+
+# Load dataset
+This dataset is generated using WT and KRas-G12D expressingn colonic epithelium from mouse. Mice user are
+ - Fabp-Cre/+
+ - Fabp-Cre/+; KRasG12D/+
+
+Alignment and peak calling was done using the `bcbio` ATAC-Seq pipeline following instructions described here: (https://bcbio-nextgen.readthedocs.io/en/latest/contents/atac.html)
+
+Merged peak data are used here. This is obtained by combining all peaks from all samples, merging peaks within 500bp of each other, and using `featureCount` to count all reads in the peaks.
+
+```{r message=FALSE, warning=FALSE}
+metadata = readr::read_csv("Data/bcbio_output/metadata.csv") %>%
+  dplyr::rename("sample"=...1) %>%
+  dplyr::select(-batch, -phenotype) %>%
+  dplyr::filter(tissue == "colon_epithelium") %>%
+  dplyr::filter(sample != "Kras_colon_rep3") %>%
+  mutate(condition=relevel(factor(condition), ref="WT")) %>%
+  as.data.frame()
+rownames(metadata) = metadata$sample
+counts_all = readr::read_tsv("Data/bcbio_output/merged/merged-counts_csnk2a1.tsv") %>%
+  tibble::column_to_rownames("id")
+
+```
+
+Metadata
+```{r metadata-table}
+metadata %>%
+  kable() %>%
+  kable_styling()
+```
+
+Load Ensembl ID dataset
+```{r eval = F}
+ensembl = useMart("ensembl", dataset="mmusculus_gene_ensembl")
+symbols = getBM(attributes=c("entrezgene_id", "mgi_symbol", "ensembl_gene_id"), mart=ensembl) %>%
+  dplyr::rename("geneId"=entrezgene_id) %>%
+  mutate(geneId=as.character(geneId))
+
+save(symbols, file = "Data/symbols.rda")
+```
+
+
+# Cleanup
+We need to do a little it of cleanup before contining. We need to remove peaks
+that appear in regions known to be false positive machines, called the blacklist
+regions. We also are interested in regions that could be affecting expression
+via chromatin accessability, so we'll only consider peaks within a window around
+the transcription start sites of genes. 
+
+## Blacklist region removal
+Turn out the peak at the TSS of Csnk2a1 falls into the blacklist because that region is considered high signal. I need to manually add it back after blacklist filtering.
+
+```{r remove-blacklist, message=FALSE, warning=FALSE}
+load("Data/symbols.rda")
+
+expand_region_string = function(df, column) {
+  df = as.data.frame(df)
+  tokens = str_split_fixed(df[,column], ":", 2)
+  chrom = tokens[,1]
+  start = as.numeric(str_split_fixed(tokens[,2], "-", 2)[, 1])
+  end = as.numeric(str_split_fixed(tokens[,2], "-", 2)[, 2])
+  regions = data.frame(seqnames=chrom, start=start, end=end)
+  df %>%
+    bind_cols(regions)
+}
+blacklist = readr::read_tsv("Data/mm10-blacklist.v2.bed.gz", col_names=c("seqnames", "start", "end")) %>% 
+  as_granges()
+blacklist_peaks = counts_all %>%
+  tibble::rownames_to_column("peak") %>%
+  expand_region_string("peak") %>%
+  as_granges() %>%
+  join_overlap_inner(blacklist) %>%
+  tidy() %>%
+  pull(peak)
+counts = counts_all[!rownames(counts_all) %in% blacklist_peaks, ]
+counts <- rbind(counts, counts_all[291429,])
+counts <- counts[,-6]
+```
+
+A few peaks overlap the ENCODE blacklist regions, so we removed them from the analysis. There 
+were `r length(blacklist_peaks)` that overlapped with the blacklist regions.
+
+## Open region annotation
+Here we annotate the peaks that we called with contextual genomic information. We can also see that
+some peaks are annotated in multiple regions, this can't be helped as genes overlap so there
+are areas where multiple features of genes overlap.
+
+```{r}
+annotatedobj = ChIPseeker::annotatePeak(counts %>%
+                                        tibble::rownames_to_column("peak") %>%
+                                        expand_region_string("peak") %>%
+                                        as_granges(), TxDb = TxDb.Mmusculus.UCSC.mm10.knownGene)
+plotAnnoPie(annotatedobj)
+
+```
+
+
+## Remove peaks not near TSS
+Generally we only care about peaks that are close to gene, here we are pretty lenient and consider
+peaks that are within 1000 bases of a transcription start site of a gene.
+
+```{r tss-peaks}
+annotated = annotatedobj %>%
+  as.GRanges() %>%
+  tidy() 
+ggplot(annotated, aes(distanceToTSS)) +
+  stat_density(geom="line") +
+  xlim(c(-10000,10000)) 
+```
+
+```{r keep-tss-peaks}
+KEEP_DISTANCE = 1000
+close_to_tss = annotated %>%
+  dplyr::filter(abs(distanceToTSS) < KEEP_DISTANCE) %>%
+  pull(peak)
+counts = counts[rownames(counts) %in% close_to_tss,]
+```
+Most peaks fall close to the TSS, but there are some that are very far away from the TSS. We'll 
+remove peaks that aren't anywhere near the TSS for a gene from the analysis. We'll keep only
+peaks within `r KEEP_DISTANCE` bases of a TSS. This leaves us with `r length(close_to_tss)` peaks to consider.
+
+## Post filtering peak annotation
+Here we annotate the peaks post-filtering
+
+```{r}
+annotatedobj = ChIPseeker::annotatePeak(counts %>%
+                                        tibble::rownames_to_column("peak") %>%
+                                        expand_region_string("peak") %>%
+                                        as_granges(), TxDb = TxDb.Mmusculus.UCSC.mm10.knownGene)
+plotAnnoPie(annotatedobj)
+upsetplot(annotatedobj)
+
+```
+
+# Differential affinity analysis
+Here we look at the **condition_Kras_vs_WT** coefficient, which will show us the peak 
+affinity differences between the mouse KRasG12D and WT pancreatic epithelial cell samples.
+```{r}
+dds = DESeqDataSetFromMatrix(counts, metadata, design=~condition)
+dds = DESeq(dds)
+# Print scale factors for BW normalization
+1/sizeFactors(dds)
+plotDispEsts(dds)
+CUTOFF = 0.05
+dds_result <- lfcShrink(dds, coef = "condition_Kras_vs_WT", type = "normal")
+```
+
+## QC
+```{r}
+DESeq2::plotMA(dds_result)
+
+dds_transform <- varianceStabilizingTransformation(dds)
+rawCountTable_transform <- as.data.frame(assay(dds_transform))
+pseudoCount_transform = log2(rawCountTable_transform + 1)
+```
+
+The top 500 most variable genes are selected for PCA analysis.
+```{r}
+plotPCA(dds_transform, intgroup = "condition", ntop = 500)
+
+```
+
+## Output results
+Signal to noise ratio is calculated using the definition given by Broad [GSEA](https://www.gsea-msigdb.org/gsea/doc/GSEAUserGuideFrame.html?Run_GSEA_Page).
+```{r forebrain-hindbrain}
+markup_deseq2 = function(res) {
+  resanno = res %>%
+    expand_region_string("peak") %>%
+    as_granges()
+  ChIPseeker::annotatePeak(resanno, TxDb=TxDb.Mmusculus.UCSC.mm10.knownGene) %>%
+    as.GRanges() %>%
+    tidy() %>%
+    left_join(symbols, by="geneId")
+}
+
+res = dds_result %>%
+  as_tibble(rownames = "peak")
+
+# calculate signal-to-noise ratio for GSEA later
+s2n <- function(num_list, cond_1 = c(4:5), cond_2 = c(1:3)) {
+  mean1 <- mean(num_list[cond_1])
+  if (mean1 == 0) {
+    mean1 = 1
+  }
+  mean2 <- mean(num_list[cond_2])
+  if (mean2 == 0) {
+    mean2 = 1
+  }
+  sd1 <- sd(num_list[cond_1])
+  sd2 <- sd(num_list[cond_2])
+  sd1 <- min(sd1, 0.2*abs(mean1))
+  sd2 <- min(sd2, 0.2*abs(mean2))
+  s2nvalue <- (mean1-mean2)/(sd1+sd2)
+  return(s2nvalue)
+}
+
+rawCountTable <- as.data.frame(DESeq2::counts(dds, normalize = TRUE)) 
+
+res$s2n <- apply(rawCountTable,1,s2n)
+
+res <- markup_deseq2(res)
+
+res <- res[!duplicated(res$peak),]
+
+write.csv(res, "Result/ATAC_ce_Kras-WT_merged_Csnk2a1subset.csv", row.names = FALSE)
+
+rawCountTable <- rawCountTable %>% rownames_to_column(var = "peak")
+rawCountTable <- left_join(rawCountTable, res[,c(6,24)], by = c("peak" ="peak")) 
+
+write.csv(rawCountTable, "Result/ATAC_ce_normalized_count_Csnk2a1 subset.csv", row.names = FALSE, na = "")
+```
+### Description of output files
+
+- **start**: start of peak
+- **end**: end of peak
+- **width**: width of peak
+- **strand**: strand of peak
+- **seqname**: chromosome of peak
+- **peak**: ID of peak
+- **baseMean**: mean count of reads at peak for all samples
+- **estimate**: log2 fold change of comparison
+- **stderror**: standard error of the log2 fold change
+- **statistic**: value of test statistic (Wald test)
+- **p.value**: unadjusted p-value
+- **p.adjusted**: adjusted p-value by BH correction
+- **annotation**: proximity to nearest gene feature
+- **geneChr**: chromosome of gene
+- **geneStart**: start coordinate of gene
+- **geneEnd**: end coordinate of gene
+- **geneId**: Entrez gene ID of gene
+- **transcriptId**: transcript ID
+- **distanceToTSS**: distance to nearest transcription start site
+- **mgi_symbol**: gene symbol from MGI
+
+
+# Session Info
+```{r}
+sessionInfo()
+```

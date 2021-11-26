@@ -1,0 +1,6 @@
+"","ID","Description","GeneRatio","BgRatio","pvalue","p.adjust","qvalue","geneID","Count"
+"GO:0004879","GO:0004879","nuclear receptor activity","7/233","48/14423",1.09940178902697e-05,0.00249805469724337,0.00235572938050455,"Ppara/Nr4a1/Ppard/Nr6a1/Hnf4g/Arnt/Nr2c2",7
+"GO:0098531","GO:0098531","ligand-activated transcription factor activity","7/233","48/14423",1.09940178902697e-05,0.00249805469724337,0.00235572938050455,"Ppara/Nr4a1/Ppard/Nr6a1/Hnf4g/Arnt/Nr2c2",7
+"GO:0070491","GO:0070491","repressing transcription factor binding","8/233","69/14423",1.47233086281534e-05,0.00249805469724337,0.00235572938050455,"Hdac4/Ppara/Cbx5/Ppard/Tle4/Tle1/Sri/Bbs2",8
+"GO:0003707","GO:0003707","steroid hormone receptor activity","6/233","49/14423",0.000130380852427823,0.0165909634714405,0.0156457022913388,"Ppara/Nr4a1/Ppard/Nr6a1/Hnf4g/Nr2c2",6
+"GO:0140297","GO:0140297","DNA-binding transcription factor binding","16/233","363/14423",0.000279706200797094,0.0284740912411442,0.026851795276521,"Hdac4/Klf5/Ppara/Nr4a1/Cbx5/Gsk3b/Ppard/Sik1/Ppargc1b/Tle4/Arnt/Tle1/Sri/Arntl/Bbs2/Kdm5c",16

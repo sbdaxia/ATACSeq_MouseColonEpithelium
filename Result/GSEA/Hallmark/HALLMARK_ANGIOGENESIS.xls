@@ -1,0 +1,29 @@
+NAME	PROBE	DESCRIPTION<br>(from dataset)	GENE SYMBOL	GENE_TITLE	RANK IN GENE LIST	RANK METRIC SCORE	RUNNING ES	CORE ENRICHMENT	
+row_0	THBD	thrombomodulin [Source:HGNC Symbol;Acc:HGNC:11784]	null	null	340	1.2860316038131714	0.057268098	Yes	
+row_1	VTN	vitronectin [Source:HGNC Symbol;Acc:HGNC:12724]	null	null	727	1.0028592348098755	0.09339846	Yes	
+row_2	PF4	platelet factor 4 [Source:HGNC Symbol;Acc:HGNC:8861]	null	null	1320	0.7852901816368103	0.10124713	Yes	
+row_3	CXCL6	C-X-C motif chemokine ligand 6 [Source:HGNC Symbol;Acc:HGNC:10643]	null	null	1424	0.7527440190315247	0.14154162	Yes	
+row_4	S100A4	S100 calcium binding protein A4 [Source:HGNC Symbol;Acc:HGNC:10494]	null	null	1568	0.7111353278160095	0.17638479	Yes	
+row_5	TIMP1	TIMP metallopeptidase inhibitor 1 [Source:HGNC Symbol;Acc:HGNC:11820]	null	null	1847	0.6375988721847534	0.19705646	Yes	
+row_6	VCAN	versican [Source:HGNC Symbol;Acc:HGNC:2464]	null	null	2228	0.5602467060089111	0.20564386	Yes	
+row_7	MSX1	msh homeobox 1 [Source:HGNC Symbol;Acc:HGNC:7391]	null	null	2395	0.5275309085845947	0.22726327	Yes	
+row_8	FSTL1	follistatin like 1 [Source:HGNC Symbol;Acc:HGNC:3972]	null	null	2409	0.5249493718147278	0.25951475	Yes	
+row_9	LRPAP1	LDL receptor related protein associated protein 1 [Source:HGNC Symbol;Acc:HGNC:6701]	null	null	2605	0.48634934425354004	0.27648598	Yes	
+row_10	OLR1	oxidized low density lipoprotein receptor 1 [Source:HGNC Symbol;Acc:HGNC:8133]	null	null	2689	0.4715891480445862	0.30042693	Yes	
+row_11	CCND2	cyclin D2 [Source:HGNC Symbol;Acc:HGNC:1583]	null	null	2835	0.4462270140647888	0.31839088	Yes	
+row_12	PGLYRP1	peptidoglycan recognition protein 1 [Source:HGNC Symbol;Acc:HGNC:8904]	null	null	5029	0.12846702337265015	0.17177719	No	
+row_13	FGFR1	fibroblast growth factor receptor 1 [Source:HGNC Symbol;Acc:HGNC:3688]	null	null	5663	0.05706525221467018	0.13072045	No	
+row_14	TNFRSF21	TNF receptor superfamily member 21 [Source:HGNC Symbol;Acc:HGNC:13469]	null	null	6382	-0.02885040082037449	0.08188365	No	
+row_15	JAG2	jagged canonical Notch ligand 2 [Source:HGNC Symbol;Acc:HGNC:6189]	null	null	8208	-0.22040176391601562	-0.032956325	No	
+row_16	ITGAV	integrin subunit alpha V [Source:HGNC Symbol;Acc:HGNC:6150]	null	null	8666	-0.2677711844444275	-0.04828172	No	
+row_17	PDGFA	platelet derived growth factor subunit A [Source:HGNC Symbol;Acc:HGNC:8799]	null	null	10508	-0.46412262320518494	-0.1488512	No	
+row_18	VEGFA	vascular endothelial growth factor A [Source:HGNC Symbol;Acc:HGNC:12680]	null	null	10619	-0.47975417971611023	-0.12629937	No	
+row_19	VAV2	vav guanine nucleotide exchange factor 2 [Source:HGNC Symbol;Acc:HGNC:12658]	null	null	10891	-0.5110052824020386	-0.11313257	No	
+row_20	KCNJ8	potassium inwardly rectifying channel subfamily J member 8 [Source:HGNC Symbol;Acc:HGNC:6269]	null	null	11057	-0.5317134857177734	-0.09117833	No	
+row_21	PTK2	protein tyrosine kinase 2 [Source:HGNC Symbol;Acc:HGNC:9611]	null	null	11177	-0.5474273562431335	-0.0649856	No	
+row_22	JAG1	jagged canonical Notch ligand 1 [Source:HGNC Symbol;Acc:HGNC:6188]	null	null	11800	-0.6273074746131897	-0.069235705	No	
+row_23	APOH	apolipoprotein H [Source:HGNC Symbol;Acc:HGNC:616]	null	null	11911	-0.6441565752029419	-0.036296178	No	
+row_24	APP	amyloid beta precursor protein [Source:HGNC Symbol;Acc:HGNC:620]	null	null	11992	-0.6556513905525208	-5.1365176E-4	No	
+row_25	LPL	lipoprotein lipase [Source:HGNC Symbol;Acc:HGNC:6677]	null	null	12362	-0.7191278338432312	0.018888723	No	
+row_26	SLCO2A1	solute carrier organic anion transporter family member 2A1 [Source:HGNC Symbol;Acc:HGNC:10955]	null	null	12669	-0.7810798287391663	0.04665058	No	
+row_27	POSTN	periostin [Source:HGNC Symbol;Acc:HGNC:16953]	null	null	13476	-0.9701918363571167	0.051083054	No	
